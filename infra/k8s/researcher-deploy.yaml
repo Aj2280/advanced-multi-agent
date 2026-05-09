@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ama-researcher
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ama-researcher
+  template:
+    metadata:
+      labels:
+        app: ama-researcher
+    spec:
+      containers:
+        - name: ama
+          image: advanced-multi-agent:latest
+          envFrom:
+            - secretRef:
+                name: ama-secrets
+          command: ["python", "-m", "main"]
+          args:
+            - "--mode"
+            - "swarm"
+            - "--agents"
+            - "researcher"
+            - "--pattern"
+            - "pipeline"
+            - "--memory"
+            - "all"
+            - "noop"
+          ports:
+            - containerPort: 9102
+              name: metrics
+

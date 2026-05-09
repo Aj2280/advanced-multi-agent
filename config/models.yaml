@@ -1,0 +1,72 @@
+providers:
+  - name: gemini
+    kind: gemini
+    enabled_env: GEMINI_API_KEY
+    api_key_env: GEMINI_API_KEY
+    default_model: gemini-2.5-flash
+    timeout_s: 45
+    max_consecutive_failures: 3
+    rpm_limit: 15
+    daily_limit: 1500
+
+  - name: openai
+    kind: openai
+    enabled_env: OPENAI_API_KEY
+    base_url_env: OPENAI_BASE_URL
+    api_key_env: OPENAI_API_KEY
+    default_model: gpt-4o-mini
+    timeout_s: 45
+    max_consecutive_failures: 3
+    rpm_limit: 60
+    daily_limit: 999999
+
+  - name: openrouter
+    kind: openai
+    enabled_env: OPENROUTER_API_KEY
+    base_url_env: OPENROUTER_BASE_URL
+    api_key_env: OPENROUTER_API_KEY
+    default_model: openai/gpt-4o-mini
+    timeout_s: 60
+    max_consecutive_failures: 3
+    rpm_limit: 20
+    daily_limit: 200
+
+  - name: groq
+    kind: openai
+    enabled_env: GROQ_API_KEY
+    base_url_env: GROQ_BASE_URL
+    api_key_env: GROQ_API_KEY
+    default_model: llama-3.3-70b-versatile
+    timeout_s: 45
+    max_consecutive_failures: 3
+    rpm_limit: 30
+    daily_limit: 14400
+
+  - name: cerebras
+    kind: openai
+    enabled_env: CEREBRAS_API_KEY
+    base_url_env: CEREBRAS_BASE_URL
+    api_key_env: CEREBRAS_API_KEY
+    default_model: llama-3.3-70b
+    timeout_s: 45
+    max_consecutive_failures: 3
+    rpm_limit: 30
+    daily_limit: 999999
+
+router:
+  strategy: fallback
+  order: [gemini, groq, cerebras, openrouter, openai]
+
+  # Agent-to-provider preferences (your “free LLM card” mapping)
+  agent_provider_map:
+    meta_agent: gemini
+    orchestrator: gemini
+    planner: gemini
+
+    researcher: groq
+    writer: groq
+
+    coder: openrouter
+
+    critic: cerebras
+

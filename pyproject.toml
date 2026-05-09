@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=70.0.0", "wheel>=0.43.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "advanced-multi-agent"
+version = "0.1.0"
+description = "Production-style multi-agent swarm MVP with debate/vote, tiered memory, routing, and observability."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Abhi" }]
+dependencies = [
+  "pydantic>=2.7.0",
+  "pyyaml>=6.0.1",
+  "rich>=13.7.1",
+
+  "google-genai>=1.0.0",
+  "langgraph>=0.2.0",
+  "langchain>=0.2.0",
+
+  "openai>=1.30.0",
+  "httpx>=0.27.0",
+  "tenacity>=8.2.3",
+
+  "redis>=5.0.4",
+  "kafka-python>=2.0.2",
+
+  "chromadb>=0.5.0",
+
+  "networkx>=3.3",
+
+  "prometheus-client>=0.20.0",
+  "opentelemetry-api>=1.25.0",
+  "opentelemetry-sdk>=1.25.0",
+  "opentelemetry-exporter-otlp>=1.25.0",
+  "opentelemetry-instrumentation-httpx>=0.46b0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2.0",
+  "pytest-asyncio>=0.23.7",
+  "ruff>=0.5.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.setuptools]
+zip-safe = false
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["agents*", "communication*", "memory*", "observability*", "self_improvement*"]
+

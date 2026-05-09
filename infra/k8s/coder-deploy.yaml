@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ama-coder
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ama-coder
+  template:
+    metadata:
+      labels:
+        app: ama-coder
+    spec:
+      containers:
+        - name: ama
+          image: advanced-multi-agent:latest
+          envFrom:
+            - secretRef:
+                name: ama-secrets
+          command: ["python", "-m", "main"]
+          args:
+            - "--mode"
+            - "swarm"
+            - "--agents"
+            - "coder"
+            - "--pattern"
+            - "pipeline"
+            - "--memory"
+            - "all"
+            - "noop"
+          ports:
+            - containerPort: 9102
+              name: metrics
+
