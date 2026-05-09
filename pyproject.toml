@@ -35,6 +35,8 @@ dependencies = [
   "opentelemetry-sdk>=1.25.0",
   "opentelemetry-exporter-otlp>=1.25.0",
   "opentelemetry-instrumentation-httpx>=0.46b0",
+  "streamlit>=1.35.0",
+  "duckduckgo-search>=6.0.0",
 ]
 
 [project.optional-dependencies]
