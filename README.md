@@ -1,3 +1,12 @@
+---
+title: Advanced Multi Agent Swarm
+emoji: 🚀
+colorFrom: indigo
+colorTo: blue
+sdk: docker
+pinned: false
+---
+
 # advanced-multi-agent (working MVP)
 
 Production-style **multi-agent swarm** skeleton with:
