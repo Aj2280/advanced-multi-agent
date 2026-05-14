@@ -98,7 +98,7 @@ def _render_swarm_workspace(art: ChatRunArtifact) -> None:
     st.divider()
     st.subheader("Multi-agent workspace")
     st.caption(
-        "Per-agent outputs, extracted code, and sandbox I/O — similar to an IDE + agent panel."
+        "Each agent: source (left) and run output / sandbox (right), like an editor and terminal."
     )
 
     if art.pattern in ("debate", "competitive") and art.judge_meta:
@@ -118,10 +118,16 @@ def _render_swarm_workspace(art: ChatRunArtifact) -> None:
                 with st.expander(f"Trace · {agent_name}", expanded=False):
                     st.json(node_ev)
             main, sandbox = _split_sandbox(raw)
-            _render_mixed_content(main)
-            if sandbox:
-                st.markdown("**Sandbox (stdout / stderr)**")
-                st.code(sandbox, language="text", line_numbers=True)
+            src_col, out_col = st.columns([1, 1], gap="medium")
+            with src_col:
+                st.markdown("**Source**")
+                _render_mixed_content(main)
+            with out_col:
+                st.markdown("**Run output**")
+                if sandbox:
+                    st.code(sandbox, language="text", line_numbers=True)
+                else:
+                    st.caption("No sandbox output. The coder runs fenced Python blocks.")
 
     if art.judge_report:
         with st.expander("Judge full report", expanded=False):
