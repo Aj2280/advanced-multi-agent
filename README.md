@@ -25,7 +25,7 @@ Our agents don't just "chat"; they have a deep, persistent memory system:
 
 ### 🛡️ Secure Execution & Safety
 - **Python Sandbox**: Agents execute code in an isolated subprocess environment with timeouts, protecting your host system.
-- **HITL (Human-in-the-Loop)**: Orchestrator halts and requests human approval for "CRITICAL" tasks or sensitive pipeline steps.
+- **HITL (Human-in-the-Loop)**: Orchestrator halts and requests human approval for "CRITICAL" tasks or sensitive pipeline steps (set `AMA_DISABLE_HITL=1` for servers / APIs).
 
 ### 🔌 Intelligent Routing & Efficiency
 - **Provider Router**: Automatically handles fallback, circuit breaking, and load balancing across OpenAI, Gemini, Groq, and more.
@@ -88,6 +88,30 @@ python -m main --mode swarm --agents researcher,coder,analyst --pattern debate "
 ```bash
 streamlit run chat_ui.py
 ```
+
+### 5. Production Workbench (API + bolt-style UI shell)
+
+Headless-friendly settings:
+
+- `AMA_DISABLE_HITL=1` — skip stdin HITL for `pipeline` / `CRITICAL` prompts (required for API servers).
+- `AMA_WORKBENCH_ROOT` — where per-session project folders are stored (default: `.local/workbenches` under the repo).
+
+**Run the HTTP API** (uses the same `ProviderRouter` and `.env` keys as the swarm):
+
+```bash
+export AMA_DISABLE_HITL=1
+python -m ama_api
+# or: ama-api   # console script from pip install -e .
+# listens on AMA_API_PORT (default 8800)
+```
+
+**Run the React workbench** (proxies `/v1` to the API — start the API first):
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+Open the Vite URL (default `http://localhost:5173`). Use **New session**, **Scaffold + npm install**, file tree, editor, **Run swarm**, and command output in the log panel.
 
 ---
 
