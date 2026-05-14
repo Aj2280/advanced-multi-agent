@@ -89,6 +89,18 @@ python -m main --mode swarm --agents researcher,coder,analyst --pattern debate "
 streamlit run chat_ui.py
 ```
 
+### 5. Connection refused in the browser?
+
+`ERR_CONNECTION_REFUSED` means **nothing is listening** on that URL (wrong machine, process not started, or different port).
+
+From the repo root:
+
+```bash
+python scripts/workbench_doctor.py
+```
+
+It checks common LLM env vars, whether **5173** (Vite) and **8800** (optional Workbench API, if present in your tree) accept TCP, and **`GET /health`** when the API answers. Follow the printed “Fix:” lines (usually `cd frontend && npm run dev`).
+
 ---
 
 ## 📊 Observability
