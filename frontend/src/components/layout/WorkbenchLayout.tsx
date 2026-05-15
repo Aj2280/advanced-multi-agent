@@ -105,6 +105,8 @@ export function WorkbenchLayout({
                   onSwarmPrompt={wb.setSwarmPrompt}
                   onPattern={wb.setPattern}
                   onToggleAgent={wb.toggleAgent}
+                  onRunBuild={() => void wb.scaffold()}
+                  onRunSwarm={() => void wb.runSwarm()}
                   disabled={wb.busy}
                 />
               </div>
