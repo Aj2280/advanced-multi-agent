@@ -63,6 +63,7 @@ router:
     orchestrator: gemini
     planner: gemini
 
+    builder: openai
     researcher: groq
     writer: groq
 

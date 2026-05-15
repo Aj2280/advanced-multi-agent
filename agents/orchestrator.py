@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import os
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 import yaml
 
@@ -12,6 +14,7 @@ from agents.patterns.debate import DebatePattern
 from agents.patterns.pipeline import PipelinePattern
 from agents.planner import Planner
 from agents.specialists.analyst import AnalystAgent
+from agents.specialists.builder import BuilderAgent
 from agents.specialists.coder import CoderAgent
 from agents.specialists.researcher import ResearcherAgent
 from agents.specialists.writer import WriterAgent
@@ -47,7 +50,7 @@ class Orchestrator:
         self.agents_config_path = agents_config_path
 
     def _load_agent_instructions(self) -> dict[str, str]:
-        with open(self.agents_config_path, "r", encoding="utf-8") as f:
+        with open(self.agents_config_path, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
         agents = data.get("agents", {})
         return {k: (v.get("instruction") or "") for k, v in agents.items()}
@@ -83,6 +86,14 @@ class Orchestrator:
                 )
             elif n == "writer":
                 built[n] = WriterAgent(
+                    router=self.router,
+                    name=n,
+                    instruction=instr,
+                    tracer=self.tracer,
+                    metrics=self.metrics,
+                )
+            elif n == "builder":
+                built[n] = BuilderAgent(
                     router=self.router,
                     name=n,
                     instruction=instr,
@@ -128,7 +139,12 @@ class Orchestrator:
             # Make memory recall explicit in the actual prompts, not just hidden in JSON context.
             if recall_block:
                 nodes = [
-                    type(n)(id=n.id, agent=n.agent, prompt=(n.prompt + recall_block), depends_on=n.depends_on)
+                    type(n)(
+                        id=n.id,
+                        agent=n.agent,
+                        prompt=(n.prompt + recall_block),
+                        depends_on=n.depends_on,
+                    )
                     for n in nodes
                 ]
             # Provide explicit meaning so LLMs don't confuse this with CPU/GPU "unified memory".
@@ -144,14 +160,20 @@ class Orchestrator:
                 },
                 "memory_recall": recall,
             }
-            await self.memory.write_event(kind="user_prompt", content=prompt, metadata={"agents": agent_names})
+            await self.memory.write_event(
+                kind="user_prompt",
+                content=prompt,
+                metadata={"agents": agent_names},
+            )
 
-            # HITL (Human-in-the-loop) Check for critical workflows
-            if "CRITICAL" in prompt.upper() or pattern == "pipeline":
-                print(f"\\n[HITL] Orchestrator is about to execute a {pattern} pattern for a critical task.")
+            # HITL (Human-in-the-loop) Check for critical workflows (disabled for API / headless).
+            _hitl_off = os.environ.get("AMA_DISABLE_HITL", "").lower() in ("1", "true", "yes")
+            if not _hitl_off and ("CRITICAL" in prompt.upper() or pattern == "pipeline"):
+                msg = f"\\n[HITL] About to execute pattern={pattern!r} (critical workflow)."
+                print(msg)
                 approval = input("[HITL] Do you approve this execution? (y/n): ")
-                if approval.lower() != 'y':
-                    raise Exception("Execution aborted by human.")
+                if approval.lower() != "y":
+                    raise RuntimeError("Execution aborted by human.")
 
             if pattern == "debate":
                 runner = DebatePattern(critic=self.critic)
@@ -208,8 +230,16 @@ class Orchestrator:
                     content=content,
                     metadata={"agent": agent, "pattern": pattern},
                 )
-            await self.memory.write_event(kind="final_output", content=final, metadata={"pattern": pattern})
-            return OrchestratorResult(final_output=final, by_agent=by_agent, judge_report=judge_report)
+            await self.memory.write_event(
+                kind="final_output",
+                content=final,
+                metadata={"pattern": pattern},
+            )
+            return OrchestratorResult(
+                final_output=final,
+                by_agent=by_agent,
+                judge_report=judge_report,
+            )
 
     def _judge_report(self, finalists, *, winner) -> str:
         lines: list[str] = []
