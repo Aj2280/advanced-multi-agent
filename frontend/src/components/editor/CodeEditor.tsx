@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { javascript } from '@codemirror/lang-javascript'
 import { json } from '@codemirror/lang-json'
@@ -6,6 +6,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { css } from '@codemirror/lang-css'
 import { html } from '@codemirror/lang-html'
 import { oneDark } from '@codemirror/theme-one-dark'
+import { EditorView } from '@codemirror/view'
 import { FileCode, Save } from 'lucide-react'
 import { langFromPath } from '../../lib/files'
 import { Button } from '../ui/Button'
@@ -13,20 +14,24 @@ import { Badge } from '../ui/Badge'
 
 function extensionsFor(path: string) {
   const lang = langFromPath(path)
+  const scroll = EditorView.theme({
+    '&': { height: '100%' },
+    '.cm-scroller': { overflow: 'auto', minHeight: '100%' },
+  })
   switch (lang) {
     case 'typescript':
     case 'javascript':
-      return [javascript({ typescript: lang === 'typescript' })]
+      return [javascript({ typescript: lang === 'typescript' }), scroll]
     case 'json':
-      return [json()]
+      return [json(), scroll]
     case 'markdown':
-      return [markdown()]
+      return [markdown(), scroll]
     case 'css':
-      return [css()]
+      return [css(), scroll]
     case 'html':
-      return [html()]
+      return [html(), scroll]
     default:
-      return []
+      return [scroll]
   }
 }
 
@@ -47,7 +52,20 @@ export function CodeEditor({
   onSave: () => void
   disabled?: boolean
 }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [editorHeight, setEditorHeight] = useState(320)
   const exts = useMemo(() => extensionsFor(path), [path])
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const ro = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height
+      if (h && h > 0) setEditorHeight(h)
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -77,10 +95,13 @@ export function CodeEditor({
         </div>
       </div>
       <div className="flex-1 min-h-0 p-2">
-        <div className="h-full min-h-[160px] rounded-lg border border-border overflow-hidden bg-[#0d0d0f]">
+        <div
+          ref={containerRef}
+          className="h-full min-h-[120px] rounded-lg border border-border overflow-hidden bg-[#0d0d0f]"
+        >
           <CodeMirror
             value={content}
-            height="100%"
+            height={`${editorHeight}px`}
             theme={oneDark}
             extensions={exts}
             onChange={onContentChange}

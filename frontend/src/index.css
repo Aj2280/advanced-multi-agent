@@ -63,6 +63,31 @@
   }
 }
 
+/* Resizable panel gutters — library sets flex; we widen the visible hit target */
+[data-separator] {
+  touch-action: none;
+  z-index: 30;
+}
+
+[data-separator][aria-orientation='vertical'] {
+  cursor: col-resize;
+}
+
+[data-separator][aria-orientation='horizontal'] {
+  cursor: row-resize;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* CodeMirror overrides */
 .cm-editor {
   height: 100% !important;
@@ -71,6 +96,7 @@
 .cm-editor .cm-scroller {
   font-family: 'JetBrains Mono', ui-monospace, monospace !important;
   font-size: 12px;
+  overflow: auto !important;
 }
 .cm-editor.cm-focused {
   outline: none !important;
