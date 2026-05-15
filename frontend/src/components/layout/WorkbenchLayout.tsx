@@ -98,7 +98,7 @@ export function WorkbenchLayout({
                 </div>
               </Panel>
 
-              <ResizeHandle orientation="horizontal" />
+              <ResizeHandle id="sep-explorer-editor" orientation="horizontal" />
 
               <Panel id="panel-editor" defaultSize={52} minSize={25}>
                 <div className="h-full min-h-0 p-2 overflow-hidden">
@@ -125,7 +125,7 @@ export function WorkbenchLayout({
                 </div>
               </Panel>
 
-              <ResizeHandle orientation="horizontal" />
+              <ResizeHandle id="sep-editor-prompt" orientation="horizontal" />
 
               <Panel id="panel-prompt" defaultSize={30} minSize={15} maxSize={45}>
                 <div className="h-full min-h-0 p-2 pl-1 overflow-hidden">
@@ -147,7 +147,7 @@ export function WorkbenchLayout({
             </Group>
           </Panel>
 
-          <ResizeHandle orientation="vertical" />
+          <ResizeHandle id="sep-main-terminal" orientation="vertical" />
 
           <Panel id="workbench-bottom" defaultSize={28} minSize={12}>
             <BottomDock

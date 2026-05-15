@@ -1,11 +1,18 @@
 import { Separator } from 'react-resizable-panels'
 
 /** Draggable gutter between resizable panels — wide enough to grab easily. */
-export function ResizeHandle({ orientation }: { orientation: 'horizontal' | 'vertical' }) {
+export function ResizeHandle({
+  id,
+  orientation,
+}: {
+  /** Must be unique within the parent Group. */
+  id: string
+  orientation: 'horizontal' | 'vertical'
+}) {
   const isVertical = orientation === 'vertical'
   return (
     <Separator
-      id={isVertical ? 'resize-v' : 'resize-h'}
+      id={id}
       className={[
         'group relative shrink-0 z-30',
         'bg-border/40 hover:bg-violet-500/50 active:bg-violet-500/70',
