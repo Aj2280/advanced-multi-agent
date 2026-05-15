@@ -27,8 +27,9 @@ fi
 
 export AMA_DISABLE_HITL="${AMA_DISABLE_HITL:-1}"
 export AMA_API_HOST="${AMA_API_HOST:-0.0.0.0}"
-export AMA_API_CORS_ALLOW_ALL="${AMA_API_CORS_ALLOW_ALL:-0}"
+export AMA_API_CORS_ALLOW_ALL="${AMA_API_CORS_ALLOW_ALL:-1}"
 export VITE_PROXY_API="http://127.0.0.1:${API_PORT}"
+export AMA_API_PORT="$API_PORT"
 
 cleanup() {
   jobs -p | xargs -r kill 2>/dev/null || true
@@ -39,17 +40,26 @@ echo "Starting API on port ${API_PORT} (host ${AMA_API_HOST}) ..."
 AMA_API_PORT="$API_PORT" AMA_API_HOST="$AMA_API_HOST" python -m ama_api &
 API_PID=$!
 
-for _ in $(seq 1 30); do
+API_READY=0
+for _ in $(seq 1 40); do
   if curl -sf "http://127.0.0.1:${API_PORT}/health" >/dev/null 2>&1; then
     echo "API healthy at http://127.0.0.1:${API_PORT}/health"
+    API_READY=1
     break
   fi
   if ! kill -0 "$API_PID" 2>/dev/null; then
-    echo "API process exited. Check errors above."
+    echo "ERROR: API process exited. Check errors above."
     exit 1
   fi
   sleep 0.5
 done
+
+if [[ "$API_READY" -ne 1 ]]; then
+  echo "ERROR: API did not become healthy on port ${API_PORT} within 20s."
+  echo "  Check: .venv active, pip install -e \".[dev]\", and port not in use."
+  kill "$API_PID" 2>/dev/null || true
+  exit 1
+fi
 
 echo "Starting Vite on port ${UI_PORT} (open http://127.0.0.1:${UI_PORT}/) ..."
 echo "Do not paste smart quotes into the URL — use plain http://127.0.0.1:${UI_PORT}/"

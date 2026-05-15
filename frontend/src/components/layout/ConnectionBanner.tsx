@@ -29,11 +29,12 @@ export function ConnectionBanner({
         <div className="text-sm min-w-0">
           <p className="font-medium text-amber-100">Backend API is not running</p>
           <p className="text-xs text-amber-200/80 mt-1 leading-relaxed">
-            The page loaded, but actions need the workbench API. From the repo root run:{' '}
+            The UI is running but the API on port <strong className="text-amber-100">8800</strong> is not
+            reachable. From the <strong className="text-amber-100">repository root</strong> run:{' '}
             <code className="text-amber-100 font-mono">./scripts/dev.sh</code>
-            {' '}(starts API + UI). Or in two terminals:{' '}
-            <code className="font-mono text-amber-100">ama-api</code> then{' '}
-            <code className="font-mono text-amber-100">cd frontend && npm run dev</code>.
+            {' '}or <code className="font-mono text-amber-100">npm run dev</code>. Running only{' '}
+            <code className="font-mono text-amber-100">cd frontend && npm run dev</code> starts the
+            page without the backend.
           </p>
         </div>
       </div>

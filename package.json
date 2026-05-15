@@ -1,0 +1,8 @@
+{
+  "name": "advanced-multi-agent-workspace",
+  "private": true,
+  "scripts": {
+    "dev": "bash scripts/dev.sh",
+    "doctor": "python scripts/workbench_doctor.py"
+  }
+}
