@@ -48,3 +48,5 @@ export interface ScaffoldResponse {
 }
 
 export type BottomTab = 'terminal' | 'agents' | 'build'
+
+export type CenterTab = 'editor' | 'preview'

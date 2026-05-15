@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+import asyncio
+import json
+import mimetypes
 import os
+from collections.abc import AsyncIterator
 from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from ama_api.state import AppState, get_state
 from workbench.errors import CommandNotAllowedError, PathEscapeError, WorkbenchError
+from workbench.paths import resolve_under_root
 from workbench.runner import CommandRunner
 from workbench.store import SessionRecord
 
@@ -162,6 +168,86 @@ def create_app() -> FastAPI:
             "judge_report": result.judge_report,
             "events": events,
         }
+
+    @app.get("/v1/sessions/{session_id}/preview")
+    def preview_file(session_id: str, path: str = "index.html") -> FileResponse:
+        rec = _session_or_404(session_id)
+        try:
+            file_path = resolve_under_root(root=rec.workspace.root, relative=path)
+        except PathEscapeError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        if not file_path.is_file():
+            raise HTTPException(status_code=404, detail="File not found.")
+        media, _ = mimetypes.guess_type(str(file_path))
+        return FileResponse(
+            path=str(file_path),
+            media_type=media or "application/octet-stream",
+        )
+
+    @app.post("/v1/sessions/{session_id}/swarm/stream")
+    async def swarm_stream(
+        session_id: str,
+        body: SwarmBody,
+        state: AppStateDep,
+    ) -> StreamingResponse:
+        _session_or_404(session_id)
+        agent = state.meta_agent(body.memory_mode, session_id=session_id)
+        queue: asyncio.Queue[tuple[str, Any]] = asyncio.Queue()
+
+        async def _run() -> None:
+            events: list[dict[str, Any]] = []
+
+            def _cb(evt: dict[str, Any]) -> None:
+                events.append(dict(evt))
+                queue.put_nowait(("progress", dict(evt)))
+
+            try:
+                result = await agent.run(
+                    prompt=body.prompt,
+                    agent_names=body.agent_names,
+                    pattern=body.pattern,
+                    reflect=body.reflect,
+                    progress_cb=_cb,
+                )
+                await queue.put(
+                    (
+                        "complete",
+                        {
+                            "final_output": result.final_output,
+                            "by_agent": result.by_agent,
+                            "judge_report": result.judge_report,
+                            "events": events,
+                        },
+                    )
+                )
+            except Exception as e:  # noqa: BLE001
+                await queue.put(("error", str(e)))
+
+        async def _events() -> AsyncIterator[bytes]:
+            task = asyncio.create_task(_run())
+            try:
+                while True:
+                    kind, payload = await queue.get()
+                    if kind == "progress":
+                        chunk = {"type": "progress", "event": payload}
+                        yield f"data: {json.dumps(chunk)}\n\n".encode()
+                    elif kind == "complete":
+                        chunk = {"type": "complete", "result": payload}
+                        yield f"data: {json.dumps(chunk)}\n\n".encode()
+                        break
+                    elif kind == "error":
+                        chunk = {"type": "error", "message": payload}
+                        yield f"data: {json.dumps(chunk)}\n\n".encode()
+                        break
+            finally:
+                if not task.done():
+                    task.cancel()
+
+        return StreamingResponse(
+            _events(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     return app
 

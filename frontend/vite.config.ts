@@ -14,5 +14,8 @@ export default defineConfig({
       '/v1': { target: api, changeOrigin: true },
       '/health': { target: api, changeOrigin: true },
     },
+    watch: {
+      usePolling: false,
+    },
   },
 })

@@ -1,9 +1,11 @@
-import { useCallback, useMemo, useState } from 'react'
-import { api, formatCommandOutput } from '../lib/api'
+import { useCallback, useRef, useState } from 'react'
+import { api, formatCommandOutput, streamSwarm } from '../lib/api'
+import { useToast } from '../components/ui/Toast'
 import type {
   AgentId,
   AgentStatus,
   BottomTab,
+  CenterTab,
   LogEntry,
   LogKind,
   ScaffoldResponse,
@@ -23,10 +25,14 @@ function logId() {
 }
 
 export function useWorkbench() {
+  const { toast } = useToast()
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [files, setFiles] = useState<string[]>([])
+  const [filesLoading, setFilesLoading] = useState(false)
   const [path, setPath] = useState('')
   const [content, setContent] = useState('')
+  const [savedContent, setSavedContent] = useState('')
+  const [previewKey, setPreviewKey] = useState(0)
   const [buildPrompt, setBuildPrompt] = useState(
     'Build a polished landing page with Vite, React, TypeScript, and Tailwind. Include hero, features, and footer.',
   )
@@ -36,19 +42,47 @@ export function useWorkbench() {
   const [busy, setBusy] = useState(false)
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [bottomTab, setBottomTab] = useState<BottomTab>('terminal')
+  const [centerTab, setCenterTab] = useState<CenterTab>('editor')
   const [agentStatuses, setAgentStatuses] = useState<AgentStatus[]>(
     ALL_AGENTS.map((a) => ({ id: a.id, label: a.label, state: 'idle' })),
   )
   const [swarmResult, setSwarmResult] = useState<SwarmResponse | null>(null)
   const [activeAgentView, setActiveAgentView] = useState<string | null>(null)
+  const swarmAbort = useRef<AbortController | null>(null)
+
+  const isDirty = path.length > 0 && content !== savedContent
+  const hasIndex = files.some((f) => f === 'index.html' || f.endsWith('/index.html'))
 
   const pushLog = useCallback((kind: LogKind, title: string, body: string) => {
     setLogs((prev) => [...prev, { id: logId(), kind, title, body, ts: Date.now() }])
   }, [])
 
+  const handleApiError = useCallback(
+    (title: string, e: unknown) => {
+      const msg = String(e)
+      pushLog('error', title, msg)
+      if (msg.includes('Failed to fetch') || msg.includes('Connection refused')) {
+        toast({
+          tone: 'error',
+          title: 'Cannot reach API',
+          message: 'Start the backend: ./scripts/dev.sh',
+        })
+      } else {
+        toast({ tone: 'error', title, message: msg.slice(0, 200) })
+      }
+    },
+    [pushLog, toast],
+  )
+
   const refreshFiles = useCallback(async (sid: string) => {
-    const data = await api<{ files: string[] }>(`/v1/sessions/${sid}/files`)
-    setFiles(data.files)
+    setFilesLoading(true)
+    try {
+      const data = await api<{ files: string[] }>(`/v1/sessions/${sid}/files`)
+      setFiles(data.files)
+      setPreviewKey((k) => k + 1)
+    } finally {
+      setFilesLoading(false)
+    }
   }, [])
 
   const newSession = useCallback(async () => {
@@ -61,31 +95,36 @@ export function useWorkbench() {
       setFiles([])
       setPath('')
       setContent('')
+      setSavedContent('')
       pushLog('success', 'Session', `Created ${res.id}`)
+      toast({ tone: 'success', title: 'Workspace ready' })
       await refreshFiles(res.id)
     } catch (e) {
-      pushLog('error', 'Session', String(e))
+      handleApiError('Session', e)
     } finally {
       setBusy(false)
     }
-  }, [pushLog, refreshFiles])
+  }, [handleApiError, pushLog, refreshFiles, toast])
 
   const loadFile = useCallback(
-    async (p: string) => {
+    async (p: string, opts?: { force?: boolean }) => {
       if (!sessionId) return
+      if (!opts?.force && isDirty && !window.confirm('Discard unsaved changes?')) return
       setBusy(true)
       try {
         const q = new URLSearchParams({ path: p })
         const data = await api<{ content: string }>(`/v1/sessions/${sessionId}/file?${q}`)
         setPath(p)
         setContent(data.content)
+        setSavedContent(data.content)
+        setCenterTab('editor')
       } catch (e) {
-        pushLog('error', 'Open file', String(e))
+        handleApiError('Open file', e)
       } finally {
         setBusy(false)
       }
     },
-    [pushLog, sessionId],
+    [handleApiError, isDirty, sessionId],
   )
 
   const saveFile = useCallback(async () => {
@@ -96,14 +135,16 @@ export function useWorkbench() {
         method: 'PUT',
         body: JSON.stringify({ path, content }),
       })
+      setSavedContent(content)
       await refreshFiles(sessionId)
       pushLog('success', 'Saved', path)
+      toast({ tone: 'success', title: 'File saved', message: path })
     } catch (e) {
-      pushLog('error', 'Save', String(e))
+      handleApiError('Save', e)
     } finally {
       setBusy(false)
     }
-  }, [content, path, pushLog, refreshFiles, sessionId])
+  }, [content, handleApiError, path, pushLog, refreshFiles, sessionId, toast])
 
   const scaffold = useCallback(async () => {
     if (!sessionId) return
@@ -121,9 +162,10 @@ export function useWorkbench() {
       })
       if (res.parse_error) {
         pushLog('error', 'Scaffold parse', res.parse_error)
-        if (res.model_excerpt) pushLog('info', 'Model excerpt', res.model_excerpt)
+        toast({ tone: 'error', title: 'Scaffold failed', message: res.parse_error })
       } else {
         pushLog('success', 'Scaffold', `Wrote ${res.file_count} file(s)`)
+        toast({ tone: 'success', title: 'Project generated', message: `${res.file_count} files` })
         for (const cmd of res.commands ?? []) {
           pushLog(
             cmd.exit_code === 0 ? 'command' : 'error',
@@ -133,13 +175,19 @@ export function useWorkbench() {
         }
       }
       await refreshFiles(sessionId)
-      if (res.written_paths?.[0]) void loadFile(res.written_paths[0])
+      const idx = res.written_paths?.find((p) => p.endsWith('index.html'))
+      if (idx) {
+        await loadFile(idx, { force: true })
+        setCenterTab('preview')
+      } else if (res.written_paths?.[0]) {
+        await loadFile(res.written_paths[0], { force: true })
+      }
     } catch (e) {
-      pushLog('error', 'Scaffold', String(e))
+      handleApiError('Scaffold', e)
     } finally {
       setBusy(false)
     }
-  }, [buildPrompt, loadFile, pushLog, refreshFiles, sessionId])
+  }, [buildPrompt, handleApiError, loadFile, pushLog, refreshFiles, sessionId, toast])
 
   const runBuild = useCallback(async () => {
     if (!sessionId) return
@@ -151,42 +199,24 @@ export function useWorkbench() {
         { method: 'POST', body: JSON.stringify({ argv: ['npm', 'run', 'build'] }) },
       )
       pushLog(res.exit_code === 0 ? 'command' : 'error', 'Build', formatCommandOutput(res))
+      if (res.exit_code === 0) {
+        toast({ tone: 'success', title: 'Build succeeded' })
+        setPreviewKey((k) => k + 1)
+      } else {
+        toast({ tone: 'error', title: 'Build failed' })
+      }
     } catch (e) {
-      pushLog('error', 'Build', String(e))
+      handleApiError('Build', e)
     } finally {
       setBusy(false)
     }
-  }, [pushLog, sessionId])
+  }, [handleApiError, pushLog, sessionId, toast])
 
-  const runSwarm = useCallback(async () => {
-    if (!sessionId) return
-    const prompt = swarmPrompt.trim() || buildPrompt
-    setBusy(true)
-    setBottomTab('agents')
-    setSwarmResult(null)
-    setAgentStatuses(
-      selectedAgents.map((id) => ({
-        id,
-        label: ALL_AGENTS.find((a) => a.id === id)?.label ?? id,
-        state: 'running',
-      })),
-    )
-    pushLog('info', 'Swarm', `Starting ${pattern} with ${selectedAgents.join(', ')}…`)
-    try {
-      const res = await api<SwarmResponse>(`/v1/sessions/${sessionId}/swarm`, {
-        method: 'POST',
-        body: JSON.stringify({
-          prompt,
-          agent_names: selectedAgents,
-          pattern,
-          reflect: false,
-          memory_mode: 'none',
-        }),
-      })
+  const applySwarmResult = useCallback(
+    (res: SwarmResponse, selected: AgentId[]) => {
       setSwarmResult(res)
-      const done = Object.keys(res.by_agent ?? {})
       setAgentStatuses(
-        selectedAgents.map((id) => ({
+        selected.map((id) => ({
           id,
           label: ALL_AGENTS.find((a) => a.id === id)?.label ?? id,
           state: 'done',
@@ -198,16 +228,98 @@ export function useWorkbench() {
         pushLog('success', 'Debate winner', `${winner.winner} (score ${winner.score ?? '—'})`)
         setActiveAgentView(winner.winner)
       } else {
+        const done = Object.keys(res.by_agent ?? {})
         setActiveAgentView(done[0] ?? null)
       }
       pushLog('swarm', 'Complete', res.final_output.slice(0, 2000))
+    },
+    [pushLog],
+  )
+
+  const runSwarm = useCallback(async () => {
+    if (!sessionId) return
+    const prompt = swarmPrompt.trim() || buildPrompt
+    swarmAbort.current?.abort()
+    const ac = new AbortController()
+    swarmAbort.current = ac
+
+    setBusy(true)
+    setBottomTab('agents')
+    setSwarmResult(null)
+    setAgentStatuses(
+      selectedAgents.map((id) => ({
+        id,
+        label: ALL_AGENTS.find((a) => a.id === id)?.label ?? id,
+        state: 'running',
+      })),
+    )
+    pushLog('info', 'Swarm', `Starting ${pattern} (streaming)…`)
+
+    const body = {
+      prompt,
+      agent_names: selectedAgents,
+      pattern,
+      reflect: false,
+      memory_mode: 'none',
+    }
+
+    try {
+      await streamSwarm(
+        sessionId,
+        body,
+        {
+          onProgress: (evt) => {
+            const t = evt.type as string
+            const agent = evt.agent as string | undefined
+            if (t === 'agent_start' && agent) {
+              setAgentStatuses((prev) =>
+                prev.map((a) => (a.id === agent ? { ...a, state: 'running' } : a)),
+              )
+            }
+            if (t === 'agent_done' && agent) {
+              setAgentStatuses((prev) =>
+                prev.map((a) => (a.id === agent ? { ...a, state: 'done' } : a)),
+              )
+            }
+            if (t === 'judge_done') {
+              pushLog('info', 'Judge', `Winner: ${evt.winner}`)
+            }
+          },
+          onComplete: (result) => {
+            applySwarmResult(
+              {
+                final_output: result.final_output,
+                by_agent: result.by_agent,
+                judge_report: result.judge_report,
+                events: result.events ?? [],
+              },
+              selectedAgents,
+            )
+            toast({ tone: 'success', title: 'Swarm complete' })
+          },
+          onError: (msg) => {
+            setAgentStatuses((s) => s.map((a) => ({ ...a, state: 'error' })))
+            handleApiError('Swarm', new Error(msg))
+          },
+        },
+        ac.signal,
+      )
     } catch (e) {
-      setAgentStatuses((s) => s.map((a) => ({ ...a, state: 'error' })))
-      pushLog('error', 'Swarm', String(e))
+      if ((e as Error).name !== 'AbortError') handleApiError('Swarm', e)
     } finally {
       setBusy(false)
     }
-  }, [buildPrompt, pattern, pushLog, selectedAgents, sessionId, swarmPrompt])
+  }, [
+    applySwarmResult,
+    buildPrompt,
+    handleApiError,
+    pattern,
+    pushLog,
+    selectedAgents,
+    sessionId,
+    swarmPrompt,
+    toast,
+  ])
 
   const toggleAgent = useCallback((id: AgentId) => {
     setSelectedAgents((prev) =>
@@ -215,25 +327,22 @@ export function useWorkbench() {
     )
   }, [])
 
-  const terminalText = useMemo(
-    () =>
-      logs
-        .map((l) => {
-          const prefix =
-            l.kind === 'error' ? '[error]' : l.kind === 'success' ? '[ok]' : `[${l.kind}]`
-          return `${prefix} ${l.title}\n${l.body}`
-        })
-        .join('\n\n'),
-    [logs],
-  )
+  const setContentTracked = useCallback((c: string) => {
+    setContent(c)
+  }, [])
 
   return {
     sessionId,
     files,
+    filesLoading,
     path,
     setPath,
     content,
-    setContent,
+    setContent: setContentTracked,
+    isDirty,
+    hasIndex,
+    previewKey,
+    bumpPreview: () => setPreviewKey((k) => k + 1),
     buildPrompt,
     setBuildPrompt,
     swarmPrompt,
@@ -246,11 +355,12 @@ export function useWorkbench() {
     logs,
     bottomTab,
     setBottomTab,
+    centerTab,
+    setCenterTab,
     agentStatuses,
     swarmResult,
     activeAgentView,
     setActiveAgentView,
-    terminalText,
     newSession,
     loadFile,
     saveFile,

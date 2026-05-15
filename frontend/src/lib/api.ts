@@ -1,4 +1,6 @@
-const apiBase = () => (import.meta.env.VITE_API_BASE_URL as string | undefined) || ''
+import type { SwarmResponse } from '../types/workbench'
+
+export const apiBase = () => (import.meta.env.VITE_API_BASE_URL as string | undefined) || ''
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(`${apiBase()}${path}`, {
@@ -30,4 +32,65 @@ export function formatCommandOutput(res: {
     `exit ${code}`,
   ].filter(Boolean)
   return out.join('\n')
+}
+
+export function previewUrl(sessionId: string, path = 'index.html'): string {
+  const q = new URLSearchParams({ path })
+  return `${apiBase()}/v1/sessions/${sessionId}/preview?${q}`
+}
+
+export type SwarmStreamHandlers = {
+  onProgress: (event: Record<string, unknown>) => void
+  onComplete: (result: SwarmResponse) => void
+  onError: (message: string) => void
+}
+
+export async function streamSwarm(
+  sessionId: string,
+  body: Record<string, unknown>,
+  handlers: SwarmStreamHandlers,
+  signal?: AbortSignal,
+): Promise<void> {
+  const r = await fetch(`${apiBase()}/v1/sessions/${sessionId}/swarm/stream`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal,
+  })
+  if (!r.ok) {
+    const t = await r.text()
+    handlers.onError(`${r.status}: ${t}`)
+    return
+  }
+  const reader = r.body?.getReader()
+  if (!reader) {
+    handlers.onError('No response body')
+    return
+  }
+  const dec = new TextDecoder()
+  let buf = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buf += dec.decode(value, { stream: true })
+    const parts = buf.split('\n\n')
+    buf = parts.pop() ?? ''
+    for (const part of parts) {
+      const line = part.split('\n').find((l) => l.startsWith('data: '))
+      if (!line) continue
+      try {
+        const data = JSON.parse(line.slice(6)) as {
+          type: string
+          event?: Record<string, unknown>
+          result?: SwarmResponse
+          message?: string
+        }
+        if (data.type === 'progress' && data.event) handlers.onProgress(data.event)
+        if (data.type === 'complete' && data.result) handlers.onComplete(data.result)
+        if (data.type === 'error') handlers.onError(data.message ?? 'Unknown error')
+      } catch {
+        /* skip malformed chunk */
+      }
+    }
+  }
 }

@@ -100,6 +100,8 @@ chmod +x scripts/dev.sh
 
 Then open **exactly** (no smart quotes): `http://127.0.0.1:5173/`
 
+**Swarm Forge UI:** resizable panels, CodeMirror editor, preview tab for `index.html`, streaming swarm (SSE) with agent cards, terminal dock.
+
 Manual start (two terminals):
 
 ```bash
