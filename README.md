@@ -89,29 +89,41 @@ python -m main --mode swarm --agents researcher,coder,analyst --pattern debate "
 streamlit run chat_ui.py
 ```
 
-### 5. Production Workbench (API + bolt-style UI shell)
+### 5. Production Workbench (recommended)
 
-Headless-friendly settings:
+One command starts the API and the React UI:
 
-- `AMA_DISABLE_HITL=1` — skip stdin HITL for `pipeline` / `CRITICAL` prompts (required for API servers).
-- `AMA_WORKBENCH_ROOT` — where per-session project folders are stored (default: `.local/workbenches` under the repo).
+```bash
+chmod +x scripts/dev.sh
+./scripts/dev.sh
+```
 
-**Run the HTTP API** (uses the same `ProviderRouter` and `.env` keys as the swarm):
+Then open **exactly** (no smart quotes): `http://127.0.0.1:5173/`
+
+Manual start (two terminals):
 
 ```bash
 export AMA_DISABLE_HITL=1
-python -m ama_api
-# or: ama-api   # console script from pip install -e .
-# listens on AMA_API_PORT (default 8800)
+pip install -e ".[dev]"
+ama-api
 ```
-
-**Run the React workbench** (proxies `/v1` to the API — start the API first):
 
 ```bash
 cd frontend && npm install && npm run dev
 ```
 
-Open the Vite URL (default `http://localhost:5173`). Use **New session**, **Scaffold + npm install**, file tree, editor, **Run swarm**, and command output in the log panel.
+- `AMA_DISABLE_HITL=1` — required for API / pipeline without stdin prompts.
+- `AMA_WORKBENCH_ROOT` — session project dirs (default `.local/workbenches`).
+
+### 6. Connection refused or bad URL?
+
+`ERR_CONNECTION_REFUSED` means nothing is listening on that port (Vite or API not started).
+
+```bash
+python scripts/workbench_doctor.py
+```
+
+If the URL contains `%E2%80%9D`, you pasted a **smart quote** — use plain `http://127.0.0.1:5173/` only.
 
 ---
 
