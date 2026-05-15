@@ -13,6 +13,9 @@ export function useApiHealth() {
 
   useEffect(() => {
     const ac = new AbortController()
+    const watchdog = window.setTimeout(() => {
+      if (!ac.signal.aborted) setState((s) => (s === 'checking' ? 'offline' : s))
+    }, 5_500)
     void (async () => {
       const ok = await checkApiHealth(ac.signal)
       if (!ac.signal.aborted) setState(ok ? 'ok' : 'offline')
@@ -24,6 +27,7 @@ export function useApiHealth() {
     }, 12_000)
     return () => {
       ac.abort()
+      window.clearTimeout(watchdog)
       window.clearInterval(id)
     }
   }, [])

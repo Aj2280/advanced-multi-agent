@@ -9,7 +9,15 @@ export function ConnectionBanner({
   state: ApiHealthState
   onRetry: () => void
 }) {
-  if (state === 'ok' || state === 'checking') return null
+  if (state === 'ok') return null
+
+  if (state === 'checking') {
+    return (
+      <div className="shrink-0 border-b border-border/50 bg-canvas/80 px-4 py-2 text-center text-xs text-zinc-500">
+        Connecting to workbench API…
+      </div>
+    )
+  }
 
   return (
     <div

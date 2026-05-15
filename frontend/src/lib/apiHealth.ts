@@ -11,13 +11,34 @@ export function apiBase(): string {
 
 export type ApiHealthState = 'checking' | 'ok' | 'offline'
 
+const HEALTH_TIMEOUT_MS = 4_000
+
 export async function checkApiHealth(signal?: AbortSignal): Promise<boolean> {
+  const ctrl = new AbortController()
+  const t = window.setTimeout(() => ctrl.abort(), HEALTH_TIMEOUT_MS)
+  const onAbort = () => {
+    window.clearTimeout(t)
+    ctrl.abort()
+  }
+  signal?.addEventListener('abort', onAbort)
   try {
-    const r = await fetch(`${apiBase()}/health`, { signal, cache: 'no-store' })
+    const r = await fetch(`${apiBase()}/health`, {
+      signal: ctrl.signal,
+      cache: 'no-store',
+    })
     if (!r.ok) return false
     const data = (await r.json()) as { status?: string }
     return data.status === 'ok'
   } catch {
     return false
+  } finally {
+    window.clearTimeout(t)
+    signal?.removeEventListener('abort', onAbort)
   }
+}
+
+export function clearAppLoadingScreen(): void {
+  document.getElementById('app-loading')?.remove()
+  const w = window as Window & { __clearAppLoadingTimeout?: () => void }
+  w.__clearAppLoadingTimeout?.()
 }
