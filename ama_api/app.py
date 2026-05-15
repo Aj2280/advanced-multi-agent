@@ -173,20 +173,30 @@ def create_app() -> FastAPI:
             "events": events,
         }
 
-    @app.get("/v1/sessions/{session_id}/preview")
-    def preview_file(session_id: str, path: str = "index.html") -> FileResponse:
-        rec = _session_or_404(session_id)
+    def _preview_file_response(rec: SessionRecord, relative: str) -> FileResponse:
+        rel = relative.strip().lstrip("/") or "index.html"
         try:
-            file_path = resolve_under_root(root=rec.workspace.root, relative=path)
+            file_path = resolve_under_root(root=rec.workspace.root, relative=rel)
         except PathEscapeError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
         if not file_path.is_file():
-            raise HTTPException(status_code=404, detail="File not found.")
+            raise HTTPException(status_code=404, detail="File not found.") from None
         media, _ = mimetypes.guess_type(str(file_path))
         return FileResponse(
             path=str(file_path),
             media_type=media or "application/octet-stream",
         )
+
+    @app.get("/v1/sessions/{session_id}/preview")
+    def preview_file_query(session_id: str, path: str = "index.html") -> FileResponse:
+        rec = _session_or_404(session_id)
+        return _preview_file_response(rec, path)
+
+    @app.get("/v1/sessions/{session_id}/preview/{file_path:path}")
+    def preview_file_path(session_id: str, file_path: str) -> FileResponse:
+        """Path-based preview so iframe relative assets (JS/CSS) resolve correctly."""
+        rec = _session_or_404(session_id)
+        return _preview_file_response(rec, file_path)
 
     @app.post("/v1/sessions/{session_id}/swarm/stream")
     async def swarm_stream(

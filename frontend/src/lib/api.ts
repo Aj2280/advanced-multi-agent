@@ -35,9 +35,11 @@ export function formatCommandOutput(res: {
   return out.join('\n')
 }
 
+/** Path-based preview URL so relative JS/CSS in the iframe resolve under /preview/… */
 export function previewUrl(sessionId: string, path = 'index.html'): string {
-  const q = new URLSearchParams({ path })
-  return `${apiBase()}/v1/sessions/${sessionId}/preview?${q}`
+  const rel = path.trim().replace(/^\//, '') || 'index.html'
+  const segments = rel.split('/').map(encodeURIComponent).join('/')
+  return `${apiBase()}/v1/sessions/${sessionId}/preview/${segments}`
 }
 
 export type SwarmStreamHandlers = {

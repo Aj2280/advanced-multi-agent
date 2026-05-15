@@ -6,7 +6,7 @@ import { BottomDock } from './BottomDock'
 import { FileExplorer } from '../files/FileExplorer'
 import { CodeEditor } from '../editor/CodeEditor'
 import { BuildComposer } from '../build/BuildComposer'
-import { PreviewPanel } from '../preview/PreviewPanel'
+import { BrowserPanel } from '../preview/BrowserPanel'
 import type { CenterTab } from '../../types/workbench'
 
 export function WorkbenchLayout({
@@ -83,9 +83,9 @@ export function WorkbenchLayout({
                       disabled={wb.busy}
                     />
                   ) : (
-                    <PreviewPanel
+                    <BrowserPanel
                       sessionId={wb.sessionId}
-                      hasIndex={wb.hasIndex}
+                      files={wb.files}
                       refreshKey={wb.previewKey}
                       onRefresh={wb.bumpPreview}
                     />
@@ -147,19 +147,24 @@ export function WorkbenchLayout({
 function CenterTabs({ tab, onTab }: { tab: CenterTab; onTab: (t: CenterTab) => void }) {
   return (
     <div className="flex gap-1 shrink-0 pt-1 relative z-10">
-      {(['editor', 'preview'] as CenterTab[]).map((t) => (
+      {(
+        [
+          { id: 'editor' as CenterTab, label: 'Editor' },
+          { id: 'preview' as CenterTab, label: 'Browser' },
+        ] as const
+      ).map(({ id: t, label }) => (
         <button
           key={t}
           type="button"
           onClick={() => onTab(t)}
           className={[
-            'px-3 py-1 rounded-md text-xs font-medium capitalize transition-colors',
+            'px-3 py-1 rounded-md text-xs font-medium transition-colors',
             tab === t
               ? 'bg-violet-500/20 text-violet-200 border border-violet-500/30'
               : 'text-zinc-500 hover:text-zinc-300 border border-transparent',
           ].join(' ')}
         >
-          {t}
+          {label}
         </button>
       ))}
     </div>

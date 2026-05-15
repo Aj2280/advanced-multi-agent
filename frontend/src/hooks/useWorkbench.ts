@@ -51,7 +51,13 @@ export function useWorkbench() {
   const swarmAbort = useRef<AbortController | null>(null)
 
   const isDirty = path.length > 0 && content !== savedContent
-  const hasIndex = files.some((f) => f === 'index.html' || f.endsWith('/index.html'))
+  const hasIndex = files.some(
+    (f) =>
+      f === 'index.html' ||
+      f.endsWith('/index.html') ||
+      f === 'dist/index.html' ||
+      f.endsWith('.html'),
+  )
 
   const pushLog = useCallback((kind: LogKind, title: string, body: string) => {
     setLogs((prev) => [...prev, { id: logId(), kind, title, body, ts: Date.now() }])
