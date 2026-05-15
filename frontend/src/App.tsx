@@ -1,4 +1,3 @@
-import React from 'react'
 import WorkbenchApp from './WorkbenchApp'
 
 function App() {
