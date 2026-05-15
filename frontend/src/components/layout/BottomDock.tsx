@@ -2,6 +2,7 @@ import type { BottomTab } from '../../types/workbench'
 import { TerminalPanel } from '../terminal/TerminalPanel'
 import { SwarmPanel } from '../agents/SwarmPanel'
 import type { AgentStatus, LogEntry, SwarmResponse } from '../../types/workbench'
+import { TabBar } from '../ui/TabBar'
 
 const tabs: { id: BottomTab; label: string }[] = [
   { id: 'terminal', label: 'Terminal' },
@@ -28,27 +29,15 @@ export function BottomDock({
   activeAgent: string | null
   onSelectAgent: (id: string) => void
 }) {
+  const tabItems = tabs.map((t) => ({
+    ...t,
+    badge: t.id === 'terminal' ? logs.length : undefined,
+  }))
+
   return (
-    <div className="h-full min-h-0 flex flex-col bg-canvas/95">
-      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-border shrink-0">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => onTab(t.id)}
-            className={[
-              'px-3 py-1 rounded-md text-xs font-medium transition-colors',
-              tab === t.id
-                ? 'bg-surface-elevated text-zinc-100'
-                : 'text-zinc-500 hover:text-zinc-300',
-            ].join(' ')}
-          >
-            {t.label}
-            {t.id === 'terminal' && logs.length > 0 && (
-              <span className="ml-1.5 text-[10px] text-violet-400">{logs.length}</span>
-            )}
-          </button>
-        ))}
+    <div className="h-full min-h-0 flex flex-col bg-canvas/95 border-t border-border/50">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border shrink-0">
+        <TabBar tabs={tabItems} active={tab} onChange={onTab} />
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">
         {tab === 'terminal' && <TerminalPanel logs={logs} fallback={terminalFallback} />}

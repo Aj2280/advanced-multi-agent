@@ -120,7 +120,12 @@ export function FileExplorer({
       }
       className="h-full"
     >
-      <SearchInput value={filter} onChange={setFilter} disabled={disabled} />
+      <SearchInput
+        value={filter}
+        onChange={setFilter}
+        disabled={disabled}
+        onClear={() => setFilter('')}
+      />
       <div className="flex-1 overflow-auto p-1 custom-scroll min-h-0">
         {loading ? (
           <div className="space-y-2 p-2">

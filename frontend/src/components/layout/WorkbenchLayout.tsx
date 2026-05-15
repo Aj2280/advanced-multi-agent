@@ -7,7 +7,7 @@ import { FileExplorer } from '../files/FileExplorer'
 import { CodeEditor } from '../editor/CodeEditor'
 import { BuildComposer } from '../build/BuildComposer'
 import { BrowserPanel } from '../preview/BrowserPanel'
-import type { CenterTab } from '../../types/workbench'
+import { CenterPanel } from './CenterPanel'
 
 export function WorkbenchLayout({
   apiOk,
@@ -69,9 +69,8 @@ export function WorkbenchLayout({
             <Separator className="w-1 bg-border/50 hover:bg-violet-500/40 transition-colors" />
 
             <Panel defaultSize={52} minSize={28}>
-              <div className="h-full flex flex-col p-2 min-h-0">
-                <CenterTabs tab={wb.centerTab} onTab={wb.setCenterTab} />
-                <div className="flex-1 min-h-0 mt-2">
+              <div className="h-full p-2 min-h-0">
+                <CenterPanel tab={wb.centerTab} onTab={wb.setCenterTab}>
                   {wb.centerTab === 'editor' ? (
                     <CodeEditor
                       path={wb.path}
@@ -90,7 +89,7 @@ export function WorkbenchLayout({
                       onRefresh={wb.bumpPreview}
                     />
                   )}
-                </div>
+                </CenterPanel>
               </div>
             </Panel>
             <Separator className="w-1 bg-border/50 hover:bg-violet-500/40 transition-colors" />
@@ -140,33 +139,6 @@ export function WorkbenchLayout({
           </div>
         </div>
       )}
-    </div>
-  )
-}
-
-function CenterTabs({ tab, onTab }: { tab: CenterTab; onTab: (t: CenterTab) => void }) {
-  return (
-    <div className="flex gap-1 shrink-0 pt-1 relative z-10">
-      {(
-        [
-          { id: 'editor' as CenterTab, label: 'Editor' },
-          { id: 'preview' as CenterTab, label: 'Browser' },
-        ] as const
-      ).map(({ id: t, label }) => (
-        <button
-          key={t}
-          type="button"
-          onClick={() => onTab(t)}
-          className={[
-            'px-3 py-1 rounded-md text-xs font-medium transition-colors',
-            tab === t
-              ? 'bg-violet-500/20 text-violet-200 border border-violet-500/30'
-              : 'text-zinc-500 hover:text-zinc-300 border border-transparent',
-          ].join(' ')}
-        >
-          {label}
-        </button>
-      ))}
     </div>
   )
 }

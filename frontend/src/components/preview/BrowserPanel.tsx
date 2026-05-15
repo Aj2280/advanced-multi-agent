@@ -48,7 +48,6 @@ export function BrowserPanel({
   const [urlInput, setUrlInput] = useState(previewPath)
 
   const htmlFiles = useMemo(() => files.filter((f) => f.endsWith('.html')), [files])
-
   const hasPreview = htmlFiles.length > 0
 
   const navigate = useCallback((path: string) => {
@@ -109,18 +108,50 @@ export function BrowserPanel({
   }
 
   return (
-    <section className="flex flex-col h-full min-h-0 rounded-xl border border-border bg-surface/80 backdrop-blur-sm overflow-hidden">
-      {/* Single toolbar row — no wrap */}
-      <div className="shrink-0 flex items-center gap-2 px-2 py-2 border-b border-border bg-surface-elevated/80">
-        <div className="flex items-center gap-0.5 shrink-0">
-          <IconButton icon={ArrowLeft} label="Back" disabled={!canBack || !hasPreview} onClick={goBack} />
-          <IconButton
-            icon={ArrowRight}
-            label="Forward"
-            disabled={!canForward || !hasPreview}
-            onClick={goForward}
-          />
-          <IconButton icon={RefreshCw} label="Reload" disabled={!hasPreview} onClick={reload} />
+    <div className="flex flex-col h-full min-h-0">
+      <div className="shrink-0 flex flex-col gap-2 px-3 py-2 border-b border-border/60 bg-surface-elevated/50">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-0.5 shrink-0">
+            <IconButton icon={ArrowLeft} label="Back" disabled={!canBack || !hasPreview} onClick={goBack} />
+            <IconButton
+              icon={ArrowRight}
+              label="Forward"
+              disabled={!canForward || !hasPreview}
+              onClick={goForward}
+            />
+            <IconButton icon={RefreshCw} label="Reload" disabled={!hasPreview} onClick={reload} />
+          </div>
+
+          <div className="flex items-center gap-0.5 shrink-0 ml-auto rounded-lg border border-border bg-canvas/60 p-0.5">
+            {VIEWPORTS.map((v) => (
+              <button
+                key={v.id}
+                type="button"
+                title={v.label}
+                onClick={() => setViewport(v.id)}
+                className={[
+                  'p-1.5 rounded-md transition-colors',
+                  viewport === v.id
+                    ? 'bg-violet-500/25 text-violet-200'
+                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-surface-hover',
+                ].join(' ')}
+              >
+                <v.icon className="w-3.5 h-3.5" />
+              </button>
+            ))}
+          </div>
+
+          {hasPreview && (
+            <a
+              href={previewUrl(sessionId, previewPath)}
+              target="_blank"
+              rel="noreferrer"
+              className="shrink-0"
+              title="Open in new tab"
+            >
+              <IconButton icon={ExternalLink} label="Open in new tab" />
+            </a>
+          )}
         </div>
 
         <AddressBar
@@ -129,41 +160,10 @@ export function BrowserPanel({
           onSubmit={() => navigate(urlInput)}
           disabled={!hasPreview}
         />
-
-        <div className="flex items-center gap-0.5 shrink-0 rounded-lg border border-border bg-canvas/60 p-0.5">
-          {VIEWPORTS.map((v) => (
-            <button
-              key={v.id}
-              type="button"
-              title={v.label}
-              onClick={() => setViewport(v.id)}
-              className={[
-                'p-1.5 rounded-md transition-colors',
-                viewport === v.id
-                  ? 'bg-violet-500/25 text-violet-200'
-                  : 'text-zinc-500 hover:text-zinc-300 hover:bg-surface-hover',
-              ].join(' ')}
-            >
-              <v.icon className="w-3.5 h-3.5" />
-            </button>
-          ))}
-        </div>
-
-        {hasPreview && (
-          <a
-            href={previewUrl(sessionId, previewPath)}
-            target="_blank"
-            rel="noreferrer"
-            className="shrink-0"
-            title="Open in new tab"
-          >
-            <IconButton icon={ExternalLink} label="Open in new tab" />
-          </a>
-        )}
       </div>
 
       {htmlFiles.length > 1 && (
-        <div className="shrink-0 flex gap-1 px-2 py-1.5 border-b border-border/50 overflow-x-auto custom-scroll">
+        <div className="shrink-0 flex gap-1 px-3 py-1.5 border-b border-border/40 overflow-x-auto custom-scroll">
           {htmlFiles.map((f) => (
             <button
               key={f}
@@ -182,7 +182,7 @@ export function BrowserPanel({
         </div>
       )}
 
-      <div className="flex-1 min-h-0 bg-[#141418] flex items-start justify-center overflow-auto p-4 custom-scroll">
+      <div className="flex-1 min-h-0 bg-[#141418] flex items-start justify-center overflow-auto p-3 custom-scroll">
         {!hasPreview ? (
           <p className="text-sm text-zinc-500 text-center max-w-sm m-auto leading-relaxed px-4">
             Generate a project with <code className="text-violet-400 font-mono text-xs">index.html</code>{' '}
@@ -190,12 +190,11 @@ export function BrowserPanel({
           </p>
         ) : (
           <div
-            className="bg-white rounded-lg shadow-panel overflow-hidden border border-zinc-700/50 transition-[width] duration-200 flex flex-col"
+            className="bg-white rounded-lg shadow-panel overflow-hidden border border-zinc-700/50 transition-[width] duration-200 flex flex-col h-full max-h-full"
             style={{
               width: vp.width,
               maxWidth: '100%',
-              height: '100%',
-              minHeight: 'min(100%, 640px)',
+              minHeight: 'min(100%, 480px)',
             }}
           >
             <iframe
@@ -203,12 +202,12 @@ export function BrowserPanel({
               key={`${previewPath}-${refreshKey}`}
               title="Project browser"
               src={iframeSrc}
-              className="w-full flex-1 min-h-[400px] border-0"
+              className="w-full flex-1 min-h-[320px] border-0"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             />
           </div>
         )}
       </div>
-    </section>
+    </div>
   )
 }

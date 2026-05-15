@@ -1,0 +1,27 @@
+import type { ReactNode } from 'react'
+import type { CenterTab } from '../../types/workbench'
+import { TabBar } from '../ui/TabBar'
+
+const CENTER_TABS = [
+  { id: 'editor' as CenterTab, label: 'Editor' },
+  { id: 'preview' as CenterTab, label: 'Browser' },
+]
+
+export function CenterPanel({
+  tab,
+  onTab,
+  children,
+}: {
+  tab: CenterTab
+  onTab: (t: CenterTab) => void
+  children: ReactNode
+}) {
+  return (
+    <section className="flex flex-col h-full min-h-0 rounded-xl border border-border bg-surface/80 backdrop-blur-sm overflow-hidden">
+      <div className="shrink-0 flex items-center justify-between gap-2 px-3 py-2 border-b border-border bg-surface-elevated/50">
+        <TabBar tabs={CENTER_TABS} active={tab} onChange={onTab} />
+      </div>
+      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+    </section>
+  )
+}
