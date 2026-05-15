@@ -298,7 +298,39 @@ with st.sidebar:
     reflect = st.toggle("Reflect", value=False)
     st.session_state["show_judge"] = st.toggle("Show judge (winner + reasons)", value=True)
     include_history = st.toggle("Include chat history (recommended)", value=True)
-    st.caption("If Docker/Redis is not running, use memory = none (or the app will auto-fallback).")
+    
+    st.divider()
+    st.subheader("Appearance")
+    theme_choice = st.selectbox(
+        "Theme Preference",
+        options=["System", "Light", "Dark"],
+        index=0,
+        help="Select 'System' to follow your OS settings."
+    )
+    
+    # CSS Injection for theme overrides
+    if theme_choice == "Light":
+        st.markdown("""
+            <style>
+                [data-testid="stAppViewContainer"] { background-color: #FFFFFF; color: #31333F; }
+                [data-testid="stSidebar"] { background-color: #F0F2F6; }
+                .stMarkdown { color: #31333F; }
+                [data-testid="stChatMessage"] { background-color: #F0F2F6; border: 1px solid #E6E9EF; }
+            </style>
+        """, unsafe_allow_html=True)
+    elif theme_choice == "Dark":
+        st.markdown("""
+            <style>
+                [data-testid="stAppViewContainer"] { background-color: #0E1117; color: #FAFAFA; }
+                [data-testid="stSidebar"] { background-color: #262730; }
+                .stMarkdown { color: #FAFAFA; }
+                [data-testid="stChatMessage"] { background-color: #1E2129; border: 1px solid #30333D; }
+            </style>
+        """, unsafe_allow_html=True)
+
+    st.caption(
+        "If Docker/Redis isn't running, choose memory = none (or the app will auto-fallback)."
+    )
     st.caption(f"Session: `{st.session_state['ama_session_id'][:8]}`")
 
 if reason := st.session_state.get("last_memory_fallback_reason"):
