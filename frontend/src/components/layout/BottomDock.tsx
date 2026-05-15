@@ -29,7 +29,7 @@ export function BottomDock({
   onSelectAgent: (id: string) => void
 }) {
   return (
-    <div className="h-[min(42vh,360px)] shrink-0 flex flex-col border-t border-border bg-canvas/95">
+    <div className="h-full min-h-0 flex flex-col bg-canvas/95">
       <div className="flex items-center gap-1 px-2 py-1.5 border-b border-border shrink-0">
         {tabs.map((t) => (
           <button

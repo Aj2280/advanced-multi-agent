@@ -18,10 +18,10 @@ export function Panel({
         className,
       ].join(' ')}
     >
-      <header className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border shrink-0">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border shrink-0">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{title}</h2>
         {action}
-      </header>
+      </div>
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">{children}</div>
     </section>
   )

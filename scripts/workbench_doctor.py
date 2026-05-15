@@ -101,8 +101,19 @@ def main() -> int:
             print("  → Port is open but HTTP failed; check logs in the API terminal.")
 
     print()
+    if ui_tcp:
+        css_ok, css_detail = _http_ok(f"http://{ui_host}:{args.ui_port}/src/index.css")
+        if css_ok and "@tailwind base" in css_detail:
+            print()
+            print("Tailwind CSS: NOT COMPILED in Vite dev (raw @tailwind in index.css)")
+            print("  → Fix: stop the Vite process and run ./scripts/dev.sh again from repo root.")
+        elif css_ok:
+            print()
+            print("Tailwind CSS: OK (PostCSS processing active)")
+
+    print()
     if api_tcp and ui_tcp:
-        print("Both ports accept connections. If the browser still fails, try http://127.0.0.1:5173/")
+        print("Both ports accept connections. Open http://127.0.0.1:5173/ (no smart quotes).")
         return 0
     return 1
 

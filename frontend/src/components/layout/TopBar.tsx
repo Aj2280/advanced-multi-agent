@@ -1,5 +1,6 @@
 import { FolderPlus, Hammer, Sparkles, Users } from 'lucide-react'
 import { Button } from '../ui/Button'
+import { ShortcutsHintInline } from './ShortcutsHint'
 
 export function TopBar({
   sessionId,
@@ -17,7 +18,10 @@ export function TopBar({
   onSwarm: () => void
 }) {
   return (
-    <header className="h-14 shrink-0 flex items-center justify-between gap-4 px-4 border-b border-border bg-canvas/90 backdrop-blur-md z-10">
+    <div
+      role="banner"
+      className="h-14 shrink-0 overflow-hidden flex flex-nowrap items-center justify-between gap-4 px-4 border-b border-border bg-canvas/90 backdrop-blur-md z-20"
+    >
       <div className="flex items-center gap-3 min-w-0">
         <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-sm font-bold shadow-glow">
           SF
@@ -31,7 +35,8 @@ export function TopBar({
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-2 flex-wrap justify-end">
+      <div className="flex items-center gap-2 flex-nowrap justify-end shrink-0">
+        {sessionId && <ShortcutsHintInline />}
         <Button variant="ghost" className="!py-1.5 !px-2 text-xs gap-1.5" onClick={onNewSession} disabled={busy}>
           <FolderPlus className="w-3.5 h-3.5" />
           <span className="hidden md:inline">New</span>
@@ -49,6 +54,6 @@ export function TopBar({
           Swarm
         </Button>
       </div>
-    </header>
+    </div>
   )
 }

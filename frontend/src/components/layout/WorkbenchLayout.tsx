@@ -7,7 +7,6 @@ import { FileExplorer } from '../files/FileExplorer'
 import { CodeEditor } from '../editor/CodeEditor'
 import { BuildComposer } from '../build/BuildComposer'
 import { PreviewPanel } from '../preview/PreviewPanel'
-import { ShortcutsHint } from './ShortcutsHint'
 import type { CenterTab } from '../../types/workbench'
 
 export function WorkbenchLayout() {
@@ -39,9 +38,8 @@ export function WorkbenchLayout() {
         onBuild={() => void wb.runBuild()}
         onSwarm={() => void wb.runSwarm()}
       />
-      <ShortcutsHint />
-
-      <Group orientation="vertical" className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <Group orientation="vertical" className="flex-1 min-h-0 w-full">
         <Panel defaultSize={72} minSize={35}>
           <Group orientation="horizontal" className="h-full">
             <Panel defaultSize={18} minSize={12} maxSize={30}>
@@ -81,7 +79,7 @@ export function WorkbenchLayout() {
                     />
                   )}
                 </div>
-                </div>
+              </div>
             </Panel>
             <Separator className="w-1 bg-border/50 hover:bg-violet-500/40 transition-colors" />
 
@@ -117,10 +115,14 @@ export function WorkbenchLayout() {
           />
         </Panel>
       </Group>
+      </div>
 
       {wb.busy && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-[2px] pointer-events-none">
-          <div className="flex items-center gap-3 rounded-xl bg-surface-elevated border border-border px-6 py-4 shadow-glow">
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/30 backdrop-blur-[2px] pointer-events-none"
+          aria-busy="true"
+        >
+          <div className="pointer-events-none flex items-center gap-3 rounded-xl bg-surface-elevated border border-border px-6 py-4 shadow-glow">
             <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse-slow" />
             <span className="text-sm text-zinc-300">Agents working…</span>
           </div>
@@ -132,7 +134,7 @@ export function WorkbenchLayout() {
 
 function CenterTabs({ tab, onTab }: { tab: CenterTab; onTab: (t: CenterTab) => void }) {
   return (
-    <div className="flex gap-1 shrink-0">
+    <div className="flex gap-1 shrink-0 pt-1 relative z-10">
       {(['editor', 'preview'] as CenterTab[]).map((t) => (
         <button
           key={t}

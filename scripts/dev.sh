@@ -50,5 +50,7 @@ done
 
 echo "Starting Vite on port ${UI_PORT} (open http://127.0.0.1:${UI_PORT}/) ..."
 echo "Do not paste smart quotes into the URL — use plain http://127.0.0.1:${UI_PORT}/"
+echo "If the UI looks unstyled, stop Vite and re-run ./scripts/dev.sh (PostCSS/Tailwind must load)."
 cd frontend
-exec npm run dev -- --host 0.0.0.0 --port "$UI_PORT"
+# Ensure postcss.config.js is picked up (Tailwind in dev)
+exec npm run dev -- --host 0.0.0.0 --port "$UI_PORT" --strictPort

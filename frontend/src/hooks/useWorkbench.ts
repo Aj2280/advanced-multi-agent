@@ -97,7 +97,6 @@ export function useWorkbench() {
       setContent('')
       setSavedContent('')
       pushLog('success', 'Session', `Created ${res.id}`)
-      toast({ tone: 'success', title: 'Workspace ready' })
       await refreshFiles(res.id)
     } catch (e) {
       handleApiError('Session', e)

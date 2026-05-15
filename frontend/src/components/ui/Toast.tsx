@@ -36,7 +36,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) => [...prev, { ...item, id }])
     window.setTimeout(() => {
       setItems((prev) => prev.filter((t) => t.id !== id))
-    }, 6000)
+    }, 3500)
   }, [])
 
   const dismiss = useCallback((id: string) => {
@@ -48,7 +48,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm pointer-events-none">
+      <div className="fixed bottom-20 left-4 z-[100] flex flex-col gap-2 max-w-sm pointer-events-none">
         {items.map((t) => {
           const Icon = icons[t.tone]
           return (
