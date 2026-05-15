@@ -45,6 +45,8 @@ class SwarmBody(BaseModel):
 
 
 def _cors_origins() -> list[str]:
+    if os.environ.get("AMA_API_CORS_ALLOW_ALL", "").lower() in ("1", "true", "yes"):
+        return ["*"]
     raw = os.environ.get("AMA_API_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
     return [o.strip() for o in raw.split(",") if o.strip()]
 
@@ -52,10 +54,12 @@ def _cors_origins() -> list[str]:
 def create_app() -> FastAPI:
     app = FastAPI(title="Advanced Multi-Agent Workbench API", version="1.0.0")
 
+    origins = _cors_origins()
+    allow_all = origins == ["*"]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=_cors_origins(),
-        allow_credentials=True,
+        allow_origins=origins,
+        allow_credentials=not allow_all,
         allow_methods=["*"],
         allow_headers=["*"],
     )

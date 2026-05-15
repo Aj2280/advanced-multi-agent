@@ -1,7 +1,17 @@
 import { ArrowRight, Sparkles } from 'lucide-react'
 import { Button } from '../ui/Button'
 
-export function WelcomeHero({ onStart, busy }: { onStart: () => void; busy: boolean }) {
+export function WelcomeHero({
+  onStart,
+  busy,
+  apiOk,
+  apiChecking,
+}: {
+  onStart: () => void
+  busy: boolean
+  apiOk: boolean
+  apiChecking: boolean
+}) {
   return (
     <div className="flex-1 flex items-center justify-center p-8 relative">
       <div className="max-w-lg text-center relative z-10">
@@ -19,11 +29,16 @@ export function WelcomeHero({ onStart, busy }: { onStart: () => void; busy: bool
           variant="primary"
           className="mt-10 px-8 py-3 text-base gap-2"
           onClick={onStart}
-          disabled={busy}
+          disabled={busy || apiChecking || !apiOk}
         >
-          Create workspace
+          {apiChecking ? 'Connecting…' : 'Create workspace'}
           <ArrowRight className="w-4 h-4" />
         </Button>
+        {!apiOk && !apiChecking && (
+          <p className="mt-4 text-xs text-amber-400/90">
+            Start the API first: <span className="font-mono">./scripts/dev.sh</span>
+          </p>
+        )}
         <p className="mt-6 text-[11px] text-zinc-600 font-mono">
           ./scripts/dev.sh · http://127.0.0.1:5173/
         </p>

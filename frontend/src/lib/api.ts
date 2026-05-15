@@ -1,6 +1,7 @@
 import type { SwarmResponse } from '../types/workbench'
+import { apiBase } from './apiHealth'
 
-export const apiBase = () => (import.meta.env.VITE_API_BASE_URL as string | undefined) || ''
+export { apiBase }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(`${apiBase()}${path}`, {

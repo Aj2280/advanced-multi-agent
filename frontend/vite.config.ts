@@ -18,4 +18,12 @@ export default defineConfig({
       usePolling: false,
     },
   },
+  preview: {
+    host: true,
+    port: 5173,
+    proxy: {
+      '/v1': { target: api, changeOrigin: true },
+      '/health': { target: api, changeOrigin: true },
+    },
+  },
 })

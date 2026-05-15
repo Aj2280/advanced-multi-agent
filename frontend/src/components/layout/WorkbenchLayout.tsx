@@ -9,12 +9,19 @@ import { BuildComposer } from '../build/BuildComposer'
 import { PreviewPanel } from '../preview/PreviewPanel'
 import type { CenterTab } from '../../types/workbench'
 
-export function WorkbenchLayout() {
+export function WorkbenchLayout({
+  apiOk,
+  apiChecking,
+}: {
+  apiOk: boolean
+  apiChecking: boolean
+}) {
   const wb = useWorkbenchContext()
+  const shell = 'flex-1 min-h-0 flex flex-col mesh-bg relative overflow-hidden'
 
   if (!wb.sessionId) {
     return (
-      <div className="h-screen flex flex-col mesh-bg noise-overlay relative">
+      <div className={`${shell} noise-overlay`}>
         <TopBar
           sessionId={null}
           busy={wb.busy}
@@ -23,13 +30,18 @@ export function WorkbenchLayout() {
           onBuild={() => void wb.runBuild()}
           onSwarm={() => void wb.runSwarm()}
         />
-        <WelcomeHero onStart={() => void wb.newSession()} busy={wb.busy} />
+        <WelcomeHero
+          onStart={() => void wb.newSession()}
+          busy={wb.busy}
+          apiOk={apiOk}
+          apiChecking={apiChecking}
+        />
       </div>
     )
   }
 
   return (
-    <div className="h-screen flex flex-col mesh-bg relative overflow-hidden">
+    <div className={shell}>
       <TopBar
         sessionId={wb.sessionId}
         busy={wb.busy}

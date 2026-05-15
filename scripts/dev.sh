@@ -26,14 +26,17 @@ if [[ ! -d frontend/node_modules ]]; then
 fi
 
 export AMA_DISABLE_HITL="${AMA_DISABLE_HITL:-1}"
+export AMA_API_HOST="${AMA_API_HOST:-0.0.0.0}"
+export AMA_API_CORS_ALLOW_ALL="${AMA_API_CORS_ALLOW_ALL:-0}"
+export VITE_PROXY_API="http://127.0.0.1:${API_PORT}"
 
 cleanup() {
   jobs -p | xargs -r kill 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM
 
-echo "Starting API on port ${API_PORT} ..."
-AMA_API_PORT="$API_PORT" python -m ama_api &
+echo "Starting API on port ${API_PORT} (host ${AMA_API_HOST}) ..."
+AMA_API_PORT="$API_PORT" AMA_API_HOST="$AMA_API_HOST" python -m ama_api &
 API_PID=$!
 
 for _ in $(seq 1 30); do
