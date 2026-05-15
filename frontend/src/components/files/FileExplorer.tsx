@@ -1,8 +1,29 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, File, Folder } from 'lucide-react'
 import { pathsToTree, type FileTreeNode } from '../../lib/files'
 import { Panel } from '../ui/Panel'
+import { SearchInput } from '../ui/AddressBar'
 import { Skeleton } from '../ui/Skeleton'
+
+function filterPaths(files: string[], query: string): string[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return files
+  return files.filter((f) => f.toLowerCase().includes(q))
+}
+
+function filterTree(nodes: FileTreeNode[], query: string): FileTreeNode[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return nodes
+  const walk = (n: FileTreeNode): FileTreeNode | null => {
+    if (n.isDir) {
+      const kids = n.children.map(walk).filter((c): c is FileTreeNode => c !== null)
+      if (kids.length > 0) return { ...n, children: kids }
+      return null
+    }
+    return n.path.toLowerCase().includes(q) || n.name.toLowerCase().includes(q) ? n : null
+  }
+  return nodes.map(walk).filter((n): n is FileTreeNode => n !== null)
+}
 
 function TreeNode({
   node,
@@ -80,7 +101,9 @@ export function FileExplorer({
   onRefresh: () => void
   disabled?: boolean
 }) {
-  const tree = pathsToTree(files)
+  const [filter, setFilter] = useState('')
+  const filtered = useMemo(() => filterPaths(files, filter), [files, filter])
+  const tree = useMemo(() => filterTree(pathsToTree(filtered), filter), [filtered, filter])
 
   return (
     <Panel
@@ -97,6 +120,7 @@ export function FileExplorer({
       }
       className="h-full"
     >
+      <SearchInput value={filter} onChange={setFilter} disabled={disabled} />
       <div className="flex-1 overflow-auto p-1 custom-scroll min-h-0">
         {loading ? (
           <div className="space-y-2 p-2">
@@ -106,7 +130,13 @@ export function FileExplorer({
           </div>
         ) : tree.length === 0 ? (
           <p className="text-xs text-zinc-600 px-3 py-4 leading-relaxed">
-            No files yet. Run <span className="text-violet-400">Generate app</span>.
+            {filter.trim()
+              ? 'No files match your search.'
+              : (
+                  <>
+                    No files yet. Run <span className="text-violet-400">Generate app</span>.
+                  </>
+                )}
           </p>
         ) : (
           tree.map((n) => (
