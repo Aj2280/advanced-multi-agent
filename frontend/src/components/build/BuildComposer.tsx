@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { ChevronDown, ChevronUp, Hammer, Search, Users, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, Hammer, Users } from 'lucide-react'
 import type { AgentId, SwarmPattern } from '../../types/workbench'
 import { filterTemplates } from '../../lib/promptTemplates'
 import { Panel } from '../ui/Panel'
 import { PromptEditor } from '../ui/PromptEditor'
+import { SearchField } from '../ui/SearchField'
 import { Button } from '../ui/Button'
 
 const AGENTS: { id: AgentId; label: string; desc: string }[] = [
@@ -18,6 +19,8 @@ export function BuildComposer({
   swarmPrompt,
   pattern,
   selectedAgents,
+  templateSearch,
+  onTemplateSearch,
   onBuildPrompt,
   onSwarmPrompt,
   onPattern,
@@ -30,6 +33,8 @@ export function BuildComposer({
   swarmPrompt: string
   pattern: SwarmPattern
   selectedAgents: AgentId[]
+  templateSearch: string
+  onTemplateSearch: (v: string) => void
   onBuildPrompt: (v: string) => void
   onSwarmPrompt: (v: string) => void
   onPattern: (p: SwarmPattern) => void
@@ -38,45 +43,25 @@ export function BuildComposer({
   onRunSwarm: () => void
   disabled?: boolean
 }) {
-  const [templateSearch, setTemplateSearch] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
-
   const templates = useMemo(() => filterTemplates(templateSearch), [templateSearch])
 
   return (
     <Panel title="Prompt" className="h-full">
       <div className="flex flex-col h-full min-h-0">
-        {/* Template search */}
-        <div className="shrink-0 px-2 pt-2 pb-1 border-b border-border/50">
-          <div className="relative">
-            <Search
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 pointer-events-none"
-              aria-hidden
-            />
-            <input
-              type="search"
-              value={templateSearch}
-              onChange={(e) => setTemplateSearch(e.target.value)}
-              disabled={disabled}
-              placeholder="Search prompts — landing, api, dashboard…"
-              aria-label="Search prompt templates"
-              className="w-full rounded-lg border border-border bg-canvas/90 py-2 pl-8 pr-8 text-xs text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500/40"
-            />
-            {templateSearch && (
-              <button
-                type="button"
-                onClick={() => setTemplateSearch('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-zinc-500 hover:text-zinc-300"
-                aria-label="Clear template search"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+        <div className="shrink-0 px-2 pt-2 pb-2 border-b border-border/50 bg-violet-500/5">
+          <SearchField
+            id="prompt-template-search"
+            label="Search prompts"
+            value={templateSearch}
+            onChange={onTemplateSearch}
+            disabled={disabled}
+            placeholder="landing, api, dashboard, todo…"
+            hint={templateSearch ? `${templates.length} template${templates.length === 1 ? '' : 's'}` : 'Click a chip to fill the prompt'}
+          />
         </div>
 
-        {/* Template chips */}
-        <div className="shrink-0 max-h-24 overflow-y-auto custom-scroll px-2 py-2 border-b border-border/40">
+        <div className="shrink-0 max-h-28 overflow-y-auto custom-scroll px-2 py-2 border-b border-border/40">
           {templates.length === 0 ? (
             <p className="text-[10px] text-zinc-600 px-1">No templates match. Try “landing” or “api”.</p>
           ) : (
@@ -97,7 +82,6 @@ export function BuildComposer({
           )}
         </div>
 
-        {/* Main prompt */}
         <div className="flex-1 min-h-0 overflow-y-auto custom-scroll p-3 flex flex-col gap-4">
           <PromptEditor
             label="Build prompt"
@@ -107,7 +91,7 @@ export function BuildComposer({
             onSubmit={onRunSwarm}
             disabled={disabled}
             minRows={5}
-            placeholder="e.g. Build a React + Vite todo app with dark mode, drag-and-drop, and localStorage…"
+            placeholder="e.g. Build a React + Vite todo app with dark mode…"
           />
 
           <div className="flex gap-2 shrink-0">
@@ -150,7 +134,7 @@ export function BuildComposer({
                 disabled={disabled}
                 minRows={3}
                 hint="Uses build prompt if empty"
-                placeholder="Override for debate — e.g. compare two auth strategies and pick a winner…"
+                placeholder="Override for debate…"
               />
 
               <div>

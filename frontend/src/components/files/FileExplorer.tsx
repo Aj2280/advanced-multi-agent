@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { ChevronDown, ChevronRight, File, Folder } from 'lucide-react'
 import { pathsToTree, type FileTreeNode } from '../../lib/files'
 import { Panel } from '../ui/Panel'
-import { SearchInput } from '../ui/AddressBar'
+import { SearchField } from '../ui/SearchField'
 import { Skeleton } from '../ui/Skeleton'
 
 function filterPaths(files: string[], query: string): string[] {
@@ -90,6 +90,8 @@ export function FileExplorer({
   files,
   activePath,
   loading,
+  search,
+  onSearch,
   onSelect,
   onRefresh,
   disabled,
@@ -97,13 +99,14 @@ export function FileExplorer({
   files: string[]
   activePath: string
   loading?: boolean
+  search: string
+  onSearch: (q: string) => void
   onSelect: (path: string) => void
   onRefresh: () => void
   disabled?: boolean
 }) {
-  const [filter, setFilter] = useState('')
-  const filtered = useMemo(() => filterPaths(files, filter), [files, filter])
-  const tree = useMemo(() => filterTree(pathsToTree(filtered), filter), [filtered, filter])
+  const filtered = useMemo(() => filterPaths(files, search), [files, search])
+  const tree = useMemo(() => filterTree(pathsToTree(filtered), search), [filtered, search])
 
   return (
     <Panel
@@ -111,7 +114,7 @@ export function FileExplorer({
       action={
         <button
           type="button"
-          className="text-[10px] text-zinc-500 hover:text-zinc-300 uppercase tracking-wide"
+          className="text-[10px] text-zinc-500 hover:text-zinc-300"
           onClick={onRefresh}
           disabled={disabled}
         >
@@ -120,12 +123,17 @@ export function FileExplorer({
       }
       className="h-full"
     >
-      <SearchInput
-        value={filter}
-        onChange={setFilter}
-        disabled={disabled}
-        onClear={() => setFilter('')}
-      />
+      <div className="shrink-0 px-2 pt-2 pb-2 border-b border-border/50 bg-violet-500/5">
+        <SearchField
+          id="explorer-file-search"
+          label="Search files"
+          value={search}
+          onChange={onSearch}
+          disabled={disabled}
+          placeholder="Filter by name or path…"
+          hint={search ? `${filtered.length} match${filtered.length === 1 ? '' : 'es'}` : undefined}
+        />
+      </div>
       <div className="flex-1 overflow-auto p-1 custom-scroll min-h-0">
         {loading ? (
           <div className="space-y-2 p-2">
@@ -135,7 +143,7 @@ export function FileExplorer({
           </div>
         ) : tree.length === 0 ? (
           <p className="text-xs text-zinc-600 px-3 py-4 leading-relaxed">
-            {filter.trim()
+            {search.trim()
               ? 'No files match your search.'
               : (
                   <>

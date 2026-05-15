@@ -42,6 +42,8 @@ export function WorkbenchLayout({
         <TopBar
           sessionId={null}
           busy={wb.busy}
+          workspaceSearch=""
+          onWorkspaceSearch={() => {}}
           onNewSession={() => void wb.newSession()}
           onScaffold={() => void wb.scaffold()}
           onBuild={() => void wb.runBuild()}
@@ -62,6 +64,8 @@ export function WorkbenchLayout({
       <TopBar
         sessionId={wb.sessionId}
         busy={wb.busy}
+        workspaceSearch={wb.workspaceSearch}
+        onWorkspaceSearch={wb.setWorkspaceSearch}
         onNewSession={() => void wb.newSession()}
         onScaffold={() => void wb.scaffold()}
         onBuild={() => void wb.runBuild()}
@@ -85,12 +89,14 @@ export function WorkbenchLayout({
               onLayoutChanged={rowLayout.onLayoutChanged}
               resizeTargetMinimumSize={{ coarse: 28, fine: 10 }}
             >
-              <Panel id="panel-explorer" defaultSize={18} minSize={10} maxSize={35}>
+              <Panel id="panel-explorer" defaultSize={18} minSize={14} maxSize={35}>
                 <div className="h-full min-h-0 p-2 pr-1 overflow-hidden">
                   <FileExplorer
                     files={wb.files}
                     activePath={wb.path}
                     loading={wb.filesLoading}
+                    search={wb.workspaceSearch}
+                    onSearch={wb.setWorkspaceSearch}
                     onSelect={(p) => void wb.loadFile(p)}
                     onRefresh={() => wb.refreshFiles()}
                     disabled={wb.busy}
@@ -127,13 +133,15 @@ export function WorkbenchLayout({
 
               <ResizeHandle id="sep-editor-prompt" orientation="horizontal" />
 
-              <Panel id="panel-prompt" defaultSize={30} minSize={15} maxSize={45}>
+              <Panel id="panel-prompt" defaultSize={30} minSize={22} maxSize={45}>
                 <div className="h-full min-h-0 p-2 pl-1 overflow-hidden">
                   <BuildComposer
                     buildPrompt={wb.buildPrompt}
                     swarmPrompt={wb.swarmPrompt}
                     pattern={wb.pattern}
                     selectedAgents={wb.selectedAgents}
+                    templateSearch={wb.workspaceSearch}
+                    onTemplateSearch={wb.setWorkspaceSearch}
                     onBuildPrompt={wb.setBuildPrompt}
                     onSwarmPrompt={wb.setSwarmPrompt}
                     onPattern={wb.setPattern}

@@ -43,6 +43,7 @@ export function useWorkbench() {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [bottomTab, setBottomTab] = useState<BottomTab>('terminal')
   const [centerTab, setCenterTab] = useState<CenterTab>('editor')
+  const [workspaceSearch, setWorkspaceSearch] = useState('')
   const [agentStatuses, setAgentStatuses] = useState<AgentStatus[]>(
     ALL_AGENTS.map((a) => ({ id: a.id, label: a.label, state: 'idle' })),
   )
@@ -362,6 +363,8 @@ export function useWorkbench() {
     setBottomTab,
     centerTab,
     setCenterTab,
+    workspaceSearch,
+    setWorkspaceSearch,
     agentStatuses,
     swarmResult,
     activeAgentView,
