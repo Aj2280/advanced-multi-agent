@@ -37,7 +37,13 @@ dependencies = [
   "opentelemetry-instrumentation-httpx>=0.46b0",
   "streamlit>=1.35.0",
   "duckduckgo-search>=6.0.0",
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.30.0",
+  "python-dotenv>=1.0.0",
 ]
+
+[project.scripts]
+ama-api = "ama_api.__main__:main"
 
 [project.optional-dependencies]
 dev = [
@@ -62,5 +68,4 @@ zip-safe = false
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["agents*", "communication*", "memory*", "observability*", "self_improvement*"]
-
+include = ["agents*", "ama_api*", "communication*", "memory*", "observability*", "self_improvement*", "workbench*"]
