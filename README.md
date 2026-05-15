@@ -25,7 +25,7 @@ Our agents don't just "chat"; they have a deep, persistent memory system:
 
 ### 🛡️ Secure Execution & Safety
 - **Python Sandbox**: Agents execute code in an isolated subprocess environment with timeouts, protecting your host system.
-- **HITL (Human-in-the-Loop)**: Orchestrator halts and requests human approval for "CRITICAL" tasks or sensitive pipeline steps.
+- **HITL (Human-in-the-Loop)**: Orchestrator halts and requests human approval for "CRITICAL" tasks or sensitive pipeline steps (set `AMA_DISABLE_HITL=1` for servers / APIs).
 
 ### 🔌 Intelligent Routing & Efficiency
 - **Provider Router**: Automatically handles fallback, circuit breaking, and load balancing across OpenAI, Gemini, Groq, and more.
@@ -88,6 +88,44 @@ python -m main --mode swarm --agents researcher,coder,analyst --pattern debate "
 ```bash
 streamlit run chat_ui.py
 ```
+
+### 5. Production Workbench (recommended)
+
+One command starts the API and the React UI:
+
+```bash
+chmod +x scripts/dev.sh
+./scripts/dev.sh
+```
+
+Then open **exactly** (no smart quotes): `http://127.0.0.1:5173/`
+
+**Swarm Forge UI:** resizable panels, CodeMirror editor, preview tab for `index.html`, streaming swarm (SSE) with agent cards, terminal dock.
+
+Manual start (two terminals):
+
+```bash
+export AMA_DISABLE_HITL=1
+pip install -e ".[dev]"
+ama-api
+```
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+- `AMA_DISABLE_HITL=1` — required for API / pipeline without stdin prompts.
+- `AMA_WORKBENCH_ROOT` — session project dirs (default `.local/workbenches`).
+
+### 6. Connection refused or bad URL?
+
+`ERR_CONNECTION_REFUSED` means nothing is listening on that port (Vite or API not started).
+
+```bash
+python scripts/workbench_doctor.py
+```
+
+If the URL contains `%E2%80%9D`, you pasted a **smart quote** — use plain `http://127.0.0.1:5173/` only.
 
 ---
 

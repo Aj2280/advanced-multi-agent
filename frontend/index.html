@@ -2,11 +2,51 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Swarm Dashboard</title>
+    <title>Swarm Forge</title>
   </head>
   <body>
+    <div
+      id="app-loading"
+      style="
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: #070708;
+        color: #a1a1aa;
+        font-family: system-ui, sans-serif;
+        font-size: 14px;
+        z-index: 9999;
+        padding: 24px;
+        text-align: center;
+      "
+    >
+      Loading Swarm Forge…
+    </div>
     <div id="root"></div>
+    <script>
+      (function () {
+        var LOADING_MS = 15000;
+        var timer = setTimeout(function () {
+          var el = document.getElementById('app-loading');
+          var root = document.getElementById('root');
+          if (!el) return;
+          if (root && root.childElementCount > 0) return;
+          el.innerHTML =
+            '<strong style="color:#fbbf24">App failed to load</strong><p style="max-width:360px;line-height:1.5;margin:8px 0 0">' +
+            'Run <code style="color:#e4e4e7">./scripts/dev.sh</code> from the repo root, then open ' +
+            '<code style="color:#e4e4e7">http://127.0.0.1:5173/</code> (not only npm run dev).</p>';
+        }, LOADING_MS);
+        window.__clearAppLoadingTimeout = function () {
+          clearTimeout(timer);
+        };
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
